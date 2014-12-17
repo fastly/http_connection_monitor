@@ -19,6 +19,9 @@ class HTTPConnectionMonitor
 
   HTTP_METHODS_RE = /\A#{Regexp.union HTTP_METHODS}/
 
+  attr_accessor :in_flight_requests
+  attr_accessor :request_counts
+
   def self.run argv = ARGV
     new.run
   end
@@ -29,12 +32,12 @@ class HTTPConnectionMonitor
     end
 
     # in-flight request count per connection
-    @requests         = Hash.new 0
+    @in_flight_requests = Hash.new 0
 
-    # history of request count per connection
-    @request_counts   = Hash.new { |h, connection| h[connection] = [] }
-    @incoming_packets = Queue.new
-    @running          = false
+    # history of request count per destination
+    @request_counts     = Hash.new { |h, destination| h[destination] = [] }
+    @incoming_packets   = Queue.new
+    @running            = false
   end
 
   def capture_loop capp
@@ -50,7 +53,7 @@ class HTTPConnectionMonitor
 
     # the last lines filter out zero-length packets just-in-case
     capp.filter = <<-FILTER
-      (tcp port 80) and
+      ((tcp dst port 80) or (tcp src port 80 and (tcp[tcpflags] & tcp-fin != 0))) and
         ((((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0) or
          ((ip6[4:2]                     - ((tcp[12]&0xf0)>>2)) != 0))
     FILTER
@@ -74,37 +77,42 @@ class HTTPConnectionMonitor
 
     @display_thread = Thread.new do
       while @running and packet = @incoming_packets.deq do
-        ip  = packet.ipv4_header || packet.ipv6_header
-        tcp = packet.tcp_header
-
-        src = "#{ip.source}:#{tcp.source_port}"
-        dst = "#{ip.destination}:#{tcp.destination_port}"
-
-        connection = if tcp.destination_port == 80 then
-                       "#{src}:#{dst}"
-                     else
-                       "#{dst}:#{src}"
-                     end
-
-
-        if tcp.fin? then
-          requests = @requests[connection]
-          @request_counts[connection] << requests
-          @requests.delete connection
-
-          p connection => requests
-          next
-        end
-
-        if tcp.destination_port == 80 and HTTP_METHODS_RE =~ packet.payload
-          @requests[connection] += 1
-        end
+        process_packet packet
       end
     end
   end
 
   def enqueue_packet packet
     @incoming_packets.enq packet
+  end
+
+  def process_packet packet
+    ip  = packet.ipv4_header || packet.ipv6_header
+    tcp = packet.tcp_header
+
+    src = "#{ip.source}:#{tcp.source_port}"
+    dst = "#{ip.destination}:#{tcp.destination_port}"
+
+    src, dst = dst, src if tcp.source_port == 80
+
+    connection = "#{src}:#{dst}"
+
+    if tcp.fin? then
+      requests = @in_flight_requests[connection]
+      @in_flight_requests.delete connection
+
+      return if requests.zero? # ignore FIN from other end
+
+      @request_counts[dst] << requests
+
+      puts "%-21s %d" % [dst, requests]
+
+      return
+    end
+
+    if tcp.destination_port == 80 and HTTP_METHODS_RE =~ packet.payload
+      @in_flight_requests[connection] += 1
+    end
   end
 
   def run
