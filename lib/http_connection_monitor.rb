@@ -24,8 +24,6 @@ class HTTPConnectionMonitor
   end
 
   def initialize
-    devices = %w[en0 lo0]
-
     @capps = devices.map do |device|
       create_capp device
     end
@@ -58,6 +56,17 @@ class HTTPConnectionMonitor
     FILTER
 
     capp
+  end
+
+  def devices
+    Capp.devices.select do |device|
+      device.addresses.any? do |address|
+        # an IPv4 addresses that is not point-to-point
+        address.netmask =~ /\./ and not address.destination
+      end
+    end.map do |device|
+      device.name # not necessary following capp-1.1
+    end
   end
 
   def display_connections
