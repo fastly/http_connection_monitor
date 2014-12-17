@@ -19,6 +19,10 @@ class HTTPConnectionMonitor
 
   HTTP_METHODS_RE = /\A#{Regexp.union HTTP_METHODS}/
 
+  def self.run argv = ARGV
+    new.run
+  end
+
   def initialize
     devices = %w[en0 lo0]
 

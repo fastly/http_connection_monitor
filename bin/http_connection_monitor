@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+
+require 'http_connection_monitor'
+
+HTTPConnectionMonitor.run
+

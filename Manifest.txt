@@ -3,5 +3,6 @@ History.rdoc
 Manifest.txt
 README.rdoc
 Rakefile
+bin/http_connection_monitor
 lib/http_connection_monitor.rb
 test/test_http_connection_monitor.rb
