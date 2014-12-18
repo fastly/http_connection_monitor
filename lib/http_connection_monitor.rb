@@ -139,11 +139,9 @@ class HTTPConnectionMonitor
 
     capp = Capp.open device, 100 + max_http_method_length
 
-    # the last lines filter out zero-length packets just-in-case
     capp.filter = <<-FILTER
-      ((tcp dst port 80) or (tcp src port 80 and (tcp[tcpflags] & tcp-fin != 0))) and
-        ((((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0) or
-         ((ip6[4:2]                     - ((tcp[12]&0xf0)>>2)) != 0))
+      (tcp dst port 80) or
+        (tcp src port 80 and (tcp[tcpflags] & tcp-fin != 0))
     FILTER
 
     capp
