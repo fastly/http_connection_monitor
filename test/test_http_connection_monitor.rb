@@ -19,6 +19,7 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     assert           options[:resolve_names]
     assert_nil       options[:run_as_directory]
     assert_nil       options[:run_as_user]
+    refute           options[:show_filter]
   end
 
   def test_class_process_args_interface
@@ -49,6 +50,12 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     options = HTTPConnectionMonitor.process_args %w[--run-as-user nobody]
 
     assert_equal 'nobody', options[:run_as_user]
+  end
+
+  def test_class_process_args_show_filter
+    options = HTTPConnectionMonitor.process_args %w[--show-filter]
+
+    assert options[:show_filter]
   end
 
   def test_process_packet

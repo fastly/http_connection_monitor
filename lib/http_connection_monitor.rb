@@ -60,6 +60,15 @@ class HTTPConnectionMonitor
 
       opt.separator nil
 
+      opt.on(      '--show-filter',
+             'Only show the tcpdump filter used.  This',
+             'allows separate capture of packets via',
+             'tcpdump which can be processed separately') do |show_filter|
+        options[:show_filter] = show_filter
+      end
+
+      opt.separator nil
+
       opt.on(      '--run-as-directory DIRECTORY',
              'chroot to the given directory after',
              'starting packet capture',
@@ -97,11 +106,12 @@ class HTTPConnectionMonitor
   end
 
   def initialize devices: [], port: 80, resolve_names: true,
-                 run_as_directory: nil, run_as_user: nil
+                 run_as_directory: nil, run_as_user: nil, show_filter: false
     @port             = port
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
+    @show_filter      = show_filter
 
     initialize_devices devices
 
@@ -149,10 +159,7 @@ class HTTPConnectionMonitor
 
     capp = Capp.open device, 100 + max_http_method_length
 
-    capp.filter = <<-FILTER
-      (tcp dst port #{@port}) or
-        (tcp src port #{@port} and (tcp[tcpflags] & tcp-fin != 0))
-    FILTER
+    capp.filter = filter
 
     capp
   end
@@ -169,6 +176,13 @@ class HTTPConnectionMonitor
 
   def enqueue_packet packet
     @incoming_packets.enq packet
+  end
+
+  def filter
+    <<-FILTER.split(/\s{2,}/).join(' ').strip
+      (tcp dst port #{@port}) or
+        (tcp src port #{@port} and (tcp[tcpflags] & tcp-fin != 0))
+    FILTER
   end
 
   def process_packet packet
@@ -201,6 +215,11 @@ class HTTPConnectionMonitor
   end
 
   def run
+    if @show_filter then
+      puts filter
+      exit
+    end
+
     capps = @devices.map { |device| create_capp device }
 
     Capp.drop_privileges @run_as_user, @run_as_directory
