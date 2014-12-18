@@ -1,4 +1,5 @@
 require 'capp'
+require 'optparse'
 require 'thread'
 
 class HTTPConnectionMonitor
