@@ -28,7 +28,7 @@ class HTTPConnectionMonitor
   def self.process_args argv
     options = {
       devices:          [],
-      port:             80,
+      ports:            [80],
       resolve_names:    true,
       run_as_directory: nil,
       run_as_user:      nil,
@@ -54,9 +54,9 @@ class HTTPConnectionMonitor
 
       opt.separator nil
 
-      opt.on('-p', '--port PORT',
-             'Listen for HTTP traffic on the given port') do |port|
-        options[:port] = port
+      opt.on('-p', '--port PORT[,PORT]', Array,
+             'Listen for HTTP traffic on the given ports') do |ports|
+        options[:ports] = ports
       end
 
       opt.separator nil
@@ -106,9 +106,9 @@ class HTTPConnectionMonitor
     new(**options).run
   end
 
-  def initialize devices: [], port: 80, resolve_names: true,
+  def initialize devices: [], ports: [80], resolve_names: true,
                  run_as_directory: nil, run_as_user: nil, show_filter: false
-    @port             = port
+    @ports            = ports
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
@@ -187,10 +187,12 @@ class HTTPConnectionMonitor
   end
 
   def filter
-    <<-FILTER.split(/\s{2,}/).join(' ').strip
-      (tcp dst port #{@port}) or
-        (tcp src port #{@port} and (tcp[tcpflags] & tcp-fin != 0))
-    FILTER
+    @ports.map do |port|
+      <<-FILTER.split(/\s{2,}/).join(' ').strip
+        ((tcp dst port #{port}) or
+          (tcp src port #{port} and (tcp[tcpflags] & tcp-fin != 0)))
+      FILTER
+    end.join ' or '
   end
 
   def process_packet packet

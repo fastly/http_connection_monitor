@@ -14,12 +14,12 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
   def test_class_process_args
     options = HTTPConnectionMonitor.process_args []
 
-    assert_empty     options[:devices]
-    assert_equal 80, options[:port]
-    assert           options[:resolve_names]
-    assert_nil       options[:run_as_directory]
-    assert_nil       options[:run_as_user]
-    refute           options[:show_filter]
+    assert_empty       options[:devices]
+    assert_equal [80], options[:ports]
+    assert             options[:resolve_names]
+    assert_nil         options[:run_as_directory]
+    assert_nil         options[:run_as_user]
+    refute             options[:show_filter]
   end
 
   def test_class_process_args_interface
@@ -37,7 +37,11 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
   def test_class_process_args_port
     options = HTTPConnectionMonitor.process_args %w[-p 8080]
 
-    assert_equal '8080', options[:port]
+    assert_equal %w[8080], options[:ports]
+
+    options = HTTPConnectionMonitor.process_args %w[-p 8080,http]
+
+    assert_equal %w[8080 http], options[:ports]
   end
 
   def test_class_process_args_run_as_directory
@@ -56,6 +60,19 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     options = HTTPConnectionMonitor.process_args %w[--show-filter]
 
     assert options[:show_filter]
+  end
+
+  def test_filter
+    monitor = HTTPConnectionMonitor.new ports: %w[http 8080]
+
+    expected = <<-FILTER.split(/\s{2,}/).join(' ').strip
+      ((tcp dst port http) or
+        (tcp src port http and (tcp[tcpflags] & tcp-fin != 0))) or
+      ((tcp dst port 8080) or
+        (tcp src port 8080 and (tcp[tcpflags] & tcp-fin != 0)))
+    FILTER
+
+    assert_equal expected, monitor.filter
   end
 
   def test_process_packet
