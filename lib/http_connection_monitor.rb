@@ -82,13 +82,18 @@ class HTTPConnectionMonitor
   end
 
   def self.run argv = ARGV
-    new.run
+    options = process_args argv
+
+    new(**options).run
   end
 
-  def initialize
-    @capps = devices.map do |device|
-      create_capp device
-    end
+  def initialize devices: [], resolve_names: true, run_as_directory: nil,
+                 run_as_user: nil
+    @resolve_names    = resolve_names
+    @run_as_directory = run_as_directory
+    @run_as_user      = run_as_user
+
+    initialize_devices devices
 
     # in-flight request count per connection
     @in_flight_requests = Hash.new 0
@@ -97,6 +102,30 @@ class HTTPConnectionMonitor
     @request_counts     = Hash.new { |h, destination| h[destination] = [] }
     @incoming_packets   = Queue.new
     @running            = false
+  end
+
+  def initialize_devices devices
+    @devices = devices
+
+    if @devices.empty? then
+      devices = Capp.devices
+
+      abort "you must run #{$0} with root permissions, try sudo" if
+        devices.empty?
+
+      loopback = devices.find do |device|
+        device.addresses.any? do |address|
+          %w[127.0.0.1 ::1].include? address.address
+        end
+      end
+
+      @devices = [
+        Capp.default_device_name,
+        (loopback.name rescue nil),
+      ].compact
+    end
+
+    @devices.uniq!
   end
 
   def capture_loop capp
@@ -118,17 +147,6 @@ class HTTPConnectionMonitor
     FILTER
 
     capp
-  end
-
-  def devices
-    Capp.devices.select do |device|
-      device.addresses.any? do |address|
-        # an IPv4 addresses that is not point-to-point
-        address.netmask =~ /\./ and not address.destination
-      end
-    end.map do |device|
-      device.name # not necessary following capp-1.1
-    end
   end
 
   def display_connections
@@ -175,7 +193,11 @@ class HTTPConnectionMonitor
   end
 
   def run
-    start_capture
+    capps = @devices.map { |device| create_capp device }
+
+    Capp.drop_privileges @run_as_user, @run_as_directory
+
+    start_capture capps
 
     display_connections.join
   rescue Interrupt
@@ -188,8 +210,8 @@ class HTTPConnectionMonitor
     exit
   end
 
-  def start_capture
-    @capps.map do |capp|
+  def start_capture capps
+    capps.map do |capp|
       Thread.new do
         capture_loop capp
       end
