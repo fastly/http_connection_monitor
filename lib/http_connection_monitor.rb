@@ -115,6 +115,9 @@ class HTTPConnectionMonitor
 
     initialize_devices devices
 
+
+    @capps              = []
+
     # in-flight request count per connection
     @in_flight_requests = Hash.new 0
 
@@ -214,6 +217,24 @@ class HTTPConnectionMonitor
     end
   end
 
+  def report
+    aggregate = "%6d %6d %6.1f %6d %6.1f" % statistics_aggregate.to_a
+
+    per_connection = statistics_per_connection.map do |connection, statistic|
+      "%-21s %6d %6d %6.1f %6d %6.1f" % [connection, *statistic]
+    end
+
+    out = []
+    out << 'Aggregate: (connections, min, avg, max, stddev)'
+    out << aggregate
+    out << nil
+
+    out << 'Per-connection: (connections, min, avg, max, stddev)'
+    out.concat per_connection
+
+    out.join "\n"
+  end
+
   def run
     if @show_filter then
       puts filter
@@ -235,14 +256,39 @@ class HTTPConnectionMonitor
     puts # clear ^C
 
     exit
+  ensure
+    puts report
   end
 
   def start_capture capps
+    @capps.concat capps
+
     capps.map do |capp|
       Thread.new do
         capture_loop capp
       end
     end
+  end
+
+  def statistics_aggregate
+    statistic = HTTPConnectionMonitor::Statistic.new
+
+    @request_counts.values.flatten.each do |count|
+      statistic.add count
+    end
+
+    statistic
+  end
+
+  def statistics_per_connection
+    @request_counts.map do |connection, counts|
+      statistic = HTTPConnectionMonitor::Statistic.new
+
+      counts.each do |count| statistic.add count end
+
+      [connection, statistic]
+    end
+
   end
 
   def stop
@@ -256,3 +302,6 @@ class HTTPConnectionMonitor
   end
 
 end
+
+require 'http_connection_monitor/statistic'
+
