@@ -209,7 +209,7 @@ class HTTPConnectionMonitor
       return
     end
 
-    if tcp.destination_port == 80 and HTTP_METHODS_RE =~ packet.payload
+    if tcp.destination_port == 80 and HTTP_METHODS_RE =~ packet.payload then
       @in_flight_requests[connection] += 1
     end
   end
