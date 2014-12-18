@@ -25,7 +25,7 @@ class HTTPConnectionMonitor
   def self.process_args argv
     options = {
       devices:          [],
-      resolve_names:    false,
+      resolve_names:    true,
       run_as_directory: nil,
       run_as_user:      nil,
     }
@@ -40,6 +40,12 @@ class HTTPConnectionMonitor
              'loopback interface are the drbdump',
              'defaults') do |interface|
         options[:devices] << interface
+      end
+
+      opt.separator nil
+
+      opt.on('-n', 'Disable name resolution') do |do_not_resolve_names|
+        options[:resolve_names] = !do_not_resolve_names
       end
 
       opt.separator nil

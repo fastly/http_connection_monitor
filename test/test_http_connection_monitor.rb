@@ -15,7 +15,7 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     options = HTTPConnectionMonitor.process_args []
 
     assert_empty options[:devices]
-    refute       options[:resolve_names]
+    assert       options[:resolve_names]
     assert_nil   options[:run_as_directory]
     assert_nil   options[:run_as_user]
   end
@@ -24,6 +24,12 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     options = HTTPConnectionMonitor.process_args %w[-i lo0 -i en0]
 
     assert_equal %w[lo0 en0], options[:devices]
+  end
+
+  def test_class_process_args_name_resolution
+    options = HTTPConnectionMonitor.process_args %w[-n]
+
+    refute options[:resolve_names]
   end
 
   def test_class_process_args_run_as_directory
