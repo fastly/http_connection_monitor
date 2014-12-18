@@ -8,7 +8,7 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
   ONE_REQUEST_PCAP = File.join test, 'one_request.pcap'
 
   def setup
-    @monitor = HTTPConnectionMonitor.new
+    @monitor = HTTPConnectionMonitor.new resolve_names: false
   end
 
   def test_class_process_args
@@ -54,12 +54,12 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     assert_empty @monitor.in_flight_requests
 
     expected = {
-      '173.10.88.49:80' => [1],
+      '173.10.88.49.80' => [1],
     }
 
     assert_equal expected, @monitor.request_counts
 
-    assert_equal "173.10.88.49:80       1\n", out
+    assert_equal "173.10.88.49.80       1\n", out
   end
 
 end
