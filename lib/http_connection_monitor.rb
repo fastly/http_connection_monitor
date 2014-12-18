@@ -294,8 +294,12 @@ class HTTPConnectionMonitor
     return unless Signal.list['INFO']
 
     trap 'INFO' do
-      puts "%6d %6d %6.1f %6d %6.1f (count, min, avg, max, stddev)" %
-        @aggregate_statistics.to_a
+      if @aggregate_statistics.count.zero? then
+        puts "no requests"
+      else
+        puts "%6d %6d %6.1f %6d %6.1f (count, min, avg, max, stddev)" %
+          @aggregate_statistics.to_a
+      end
     end
   end
 
