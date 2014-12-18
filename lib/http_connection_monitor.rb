@@ -53,6 +53,14 @@ class HTTPConnectionMonitor
              'directory') do |directory|
         options[:run_as_directory] = directory
       end
+
+      opt.separator nil
+
+      opt.on('-Z', '--run-as-user USER',
+             'Drop root privileges and run as the',
+             'given user') do |user|
+        options[:run_as_user] = user
+      end
     end
 
     op.parse! argv
