@@ -1,5 +1,6 @@
 require 'capp'
 require 'optparse'
+require 'resolv'
 require 'thread'
 
 class HTTPConnectionMonitor
@@ -89,7 +90,7 @@ class HTTPConnectionMonitor
 
   def initialize devices: [], resolve_names: true, run_as_directory: nil,
                  run_as_user: nil
-    @resolve_names    = resolve_names
+    @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
 
@@ -165,8 +166,8 @@ class HTTPConnectionMonitor
     ip  = packet.ipv4_header || packet.ipv6_header
     tcp = packet.tcp_header
 
-    src = "#{ip.source}:#{tcp.source_port}"
-    dst = "#{ip.destination}:#{tcp.destination_port}"
+    src = packet.source @resolver
+    dst = packet.destination @resolver
 
     src, dst = dst, src if tcp.source_port == 80
 
