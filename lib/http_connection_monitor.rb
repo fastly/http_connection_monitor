@@ -22,6 +22,38 @@ class HTTPConnectionMonitor
   attr_accessor :in_flight_requests
   attr_accessor :request_counts
 
+  def self.process_args argv
+    options = {
+      devices:          [],
+      resolve_names:    false,
+      run_as_directory: nil,
+      run_as_user:      nil,
+    }
+
+    op = OptionParser.new do |opt|
+      opt.on('-i', '--interface INTERFACE',
+             'The interface to listen on or a tcpdump',
+             'packet capture file.  Multiple interfaces',
+             'can be specified.',
+             "\n",
+             'The tcpdump default interface and the',
+             'loopback interface are the drbdump',
+             'defaults') do |interface|
+        options[:devices] << interface
+      end
+    end
+
+    op.parse! argv
+
+    options
+  rescue OptionParser::ParseError => e
+    $stderr.puts op
+    $stderr.puts
+    $stderr.puts e.message
+
+    abort
+  end
+
   def self.run argv = ARGV
     new.run
   end
