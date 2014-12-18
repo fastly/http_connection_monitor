@@ -41,6 +41,18 @@ class HTTPConnectionMonitor
              'defaults') do |interface|
         options[:devices] << interface
       end
+
+      opt.separator nil
+
+      opt.on(      '--run-as-directory DIRECTORY',
+             'chroot to the given directory after',
+             'starting packet capture',
+             "\n",
+             'Note that you must disable name resolution',
+             'or provide /etc/hosts in the chroot',
+             'directory') do |directory|
+        options[:run_as_directory] = directory
+      end
     end
 
     op.parse! argv

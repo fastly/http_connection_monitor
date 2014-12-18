@@ -26,6 +26,12 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     assert_equal %w[lo0 en0], options[:devices]
   end
 
+  def test_class_process_args_run_as_directory
+    options = HTTPConnectionMonitor.process_args %w[--run-as-directory /nonexistent]
+
+    assert_equal '/nonexistent', options[:run_as_directory]
+  end
+
   def test_process_packet
     out, = capture_io do
       capp = Capp.open(ONE_REQUEST_PCAP).loop do |packet|
