@@ -27,6 +27,7 @@ class HTTPConnectionMonitor
   def self.process_args argv
     options = {
       devices:          [],
+      port:             80,
       resolve_names:    true,
       run_as_directory: nil,
       run_as_user:      nil,
@@ -48,6 +49,13 @@ class HTTPConnectionMonitor
 
       opt.on('-n', 'Disable name resolution') do |do_not_resolve_names|
         options[:resolve_names] = !do_not_resolve_names
+      end
+
+      opt.separator nil
+
+      opt.on('-p', '--port PORT',
+             'Listen for HTTP traffic on the given port') do |port|
+        options[:port] = port
       end
 
       opt.separator nil
@@ -88,8 +96,9 @@ class HTTPConnectionMonitor
     new(**options).run
   end
 
-  def initialize devices: [], resolve_names: true, run_as_directory: nil,
-                 run_as_user: nil
+  def initialize devices: [], port: 80, resolve_names: true,
+                 run_as_directory: nil, run_as_user: nil
+    @port             = port
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
@@ -141,8 +150,8 @@ class HTTPConnectionMonitor
     capp = Capp.open device, 100 + max_http_method_length
 
     capp.filter = <<-FILTER
-      (tcp dst port 80) or
-        (tcp src port 80 and (tcp[tcpflags] & tcp-fin != 0))
+      (tcp dst port #{@port}) or
+        (tcp src port #{@port} and (tcp[tcpflags] & tcp-fin != 0))
     FILTER
 
     capp

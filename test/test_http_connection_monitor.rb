@@ -14,10 +14,11 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
   def test_class_process_args
     options = HTTPConnectionMonitor.process_args []
 
-    assert_empty options[:devices]
-    assert       options[:resolve_names]
-    assert_nil   options[:run_as_directory]
-    assert_nil   options[:run_as_user]
+    assert_empty     options[:devices]
+    assert_equal 80, options[:port]
+    assert           options[:resolve_names]
+    assert_nil       options[:run_as_directory]
+    assert_nil       options[:run_as_user]
   end
 
   def test_class_process_args_interface
@@ -30,6 +31,12 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     options = HTTPConnectionMonitor.process_args %w[-n]
 
     refute options[:resolve_names]
+  end
+
+  def test_class_process_args_port
+    options = HTTPConnectionMonitor.process_args %w[-p 8080]
+
+    assert_equal '8080', options[:port]
   end
 
   def test_class_process_args_run_as_directory
