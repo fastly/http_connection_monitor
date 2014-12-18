@@ -23,7 +23,7 @@ class HTTPConnectionMonitor
 
   attr_reader :aggregate_statistics
   attr_accessor :in_flight_requests
-  attr_accessor :request_counts
+  attr_accessor :request_statistics
 
   def self.process_args argv
     options = {
@@ -123,7 +123,9 @@ class HTTPConnectionMonitor
     @in_flight_requests   = Hash.new 0
 
     # history of request count per destination
-    @request_counts       = Hash.new { |h, destination| h[destination] = [] }
+    @request_statistics   = Hash.new do |h, destination|
+      h[destination] = HTTPConnectionMonitor::Statistic.new
+    end
 
     @capps            = []
     @incoming_packets = Queue.new
@@ -208,7 +210,7 @@ class HTTPConnectionMonitor
 
       return if requests.zero? # ignore FIN from other end
 
-      @request_counts[dst] << requests
+      @request_statistics[dst].add requests
       @aggregate_statistics.add requests
 
       puts "%-21s %d" % [dst, requests]
@@ -224,7 +226,7 @@ class HTTPConnectionMonitor
   def report
     aggregate = "%6d %6d %6.1f %6d %6.1f" % @aggregate_statistics.to_a
 
-    per_connection = statistics_per_connection.map do |connection, statistic|
+    per_connection = @request_statistics.map do |connection, statistic|
       "%-21s %6d %6d %6.1f %6d %6.1f" % [connection, *statistic]
     end
 
@@ -276,17 +278,6 @@ class HTTPConnectionMonitor
         capture_loop capp
       end
     end
-  end
-
-  def statistics_per_connection
-    @request_counts.map do |connection, counts|
-      statistic = HTTPConnectionMonitor::Statistic.new
-
-      counts.each do |count| statistic.add count end
-
-      [connection, statistic]
-    end
-
   end
 
   def stop

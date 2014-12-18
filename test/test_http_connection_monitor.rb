@@ -67,11 +67,14 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
 
     assert_empty @monitor.in_flight_requests
 
+    stat = HTTPConnectionMonitor::Statistic.new
+    stat.add 1
+
     expected = {
-      '173.10.88.49.80' => [1],
+      '173.10.88.49.80' => stat,
     }
 
-    assert_equal expected, @monitor.request_counts
+    assert_equal expected, @monitor.request_statistics
 
     assert_equal "173.10.88.49.80       1\n", out
 
@@ -79,11 +82,14 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
   end
 
   def test_report
-    @monitor.request_counts['192.0.2.2.80'] = [1, 1, 2, 3, 5, 8, 13]
-    @monitor.request_counts['192.0.2.3.80'] = [13, 21, 34]
+    [1, 1, 2, 3, 5, 8, 13].each do |requests|
+      @monitor.aggregate_statistics.add requests
+      @monitor.request_statistics['192.0.2.2.80'].add requests
+    end
 
-    @monitor.request_counts.values.flatten.each do |count|
-      @monitor.aggregate_statistics.add count
+    [13, 21, 34].each do |requests|
+      @monitor.aggregate_statistics.add requests
+      @monitor.request_statistics['192.0.2.3.80'].add requests
     end
 
     out = @monitor.report
@@ -98,32 +104,6 @@ Per-connection: (connections, min, avg, max, stddev)
     EXPECTED
 
     assert_equal expected, out
-  end
-
-  def test_statistics_per_connection
-    @monitor.request_counts['192.0.2.2.80'] = [1, 1, 2, 3, 5, 8, 13]
-    @monitor.request_counts['192.0.2.3.80'] = [13, 21, 34]
-
-    stat_1 = HTTPConnectionMonitor::Statistic.new
-    stat_1.add 1
-    stat_1.add 1
-    stat_1.add 2
-    stat_1.add 3
-    stat_1.add 5
-    stat_1.add 8
-    stat_1.add 13
-
-    stat_2 = HTTPConnectionMonitor::Statistic.new
-    stat_2.add 13
-    stat_2.add 21
-    stat_2.add 34
-
-    expected = [
-      ['192.0.2.2.80', stat_1],
-      ['192.0.2.3.80', stat_2],
-    ]
-
-    assert_equal expected, @monitor.statistics_per_connection
   end
 
 end
