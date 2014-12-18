@@ -74,11 +74,17 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     assert_equal expected, @monitor.request_counts
 
     assert_equal "173.10.88.49.80       1\n", out
+
+    assert_equal 1, @monitor.aggregate_statistics.count
   end
 
   def test_report
     @monitor.request_counts['192.0.2.2.80'] = [1, 1, 2, 3, 5, 8, 13]
     @monitor.request_counts['192.0.2.3.80'] = [13, 21, 34]
+
+    @monitor.request_counts.values.flatten.each do |count|
+      @monitor.aggregate_statistics.add count
+    end
 
     out = @monitor.report
 
@@ -92,25 +98,6 @@ Per-connection: (connections, min, avg, max, stddev)
     EXPECTED
 
     assert_equal expected, out
-  end
-
-  def test_statistics_aggregate
-    @monitor.request_counts['192.0.2.2.80'] = [1, 1, 2, 3, 5, 8, 13]
-    @monitor.request_counts['192.0.2.3.80'] = [13, 21, 34]
-
-    expected = HTTPConnectionMonitor::Statistic.new
-    expected.add 1
-    expected.add 1
-    expected.add 2
-    expected.add 3
-    expected.add 5
-    expected.add 8
-    expected.add 13
-    expected.add 13
-    expected.add 21
-    expected.add 34
-
-    assert_equal expected, @monitor.statistics_aggregate
   end
 
   def test_statistics_per_connection

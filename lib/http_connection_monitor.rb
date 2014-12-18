@@ -21,6 +21,7 @@ class HTTPConnectionMonitor
 
   HTTP_METHODS_RE = /\A#{Regexp.union HTTP_METHODS}/
 
+  attr_reader :aggregate_statistics
   attr_accessor :in_flight_requests
   attr_accessor :request_counts
 
@@ -116,15 +117,17 @@ class HTTPConnectionMonitor
     initialize_devices devices
 
 
-    @capps              = []
+    @aggregate_statistics = HTTPConnectionMonitor::Statistic.new
 
     # in-flight request count per connection
-    @in_flight_requests = Hash.new 0
+    @in_flight_requests   = Hash.new 0
 
     # history of request count per destination
-    @request_counts     = Hash.new { |h, destination| h[destination] = [] }
-    @incoming_packets   = Queue.new
-    @running            = false
+    @request_counts       = Hash.new { |h, destination| h[destination] = [] }
+
+    @capps            = []
+    @incoming_packets = Queue.new
+    @running          = false
   end
 
   def initialize_devices devices
@@ -206,6 +209,7 @@ class HTTPConnectionMonitor
       return if requests.zero? # ignore FIN from other end
 
       @request_counts[dst] << requests
+      @aggregate_statistics.add requests
 
       puts "%-21s %d" % [dst, requests]
 
@@ -218,7 +222,7 @@ class HTTPConnectionMonitor
   end
 
   def report
-    aggregate = "%6d %6d %6.1f %6d %6.1f" % statistics_aggregate.to_a
+    aggregate = "%6d %6d %6.1f %6d %6.1f" % @aggregate_statistics.to_a
 
     per_connection = statistics_per_connection.map do |connection, statistic|
       "%-21s %6d %6d %6.1f %6d %6.1f" % [connection, *statistic]
@@ -247,8 +251,12 @@ class HTTPConnectionMonitor
 
     start_capture capps
 
+    trap_info
+
     display_connections.join
   rescue Interrupt
+    untrap_info
+
     stop
 
     @display_thread.join
@@ -270,16 +278,6 @@ class HTTPConnectionMonitor
     end
   end
 
-  def statistics_aggregate
-    statistic = HTTPConnectionMonitor::Statistic.new
-
-    @request_counts.values.flatten.each do |count|
-      statistic.add count
-    end
-
-    statistic
-  end
-
   def statistics_per_connection
     @request_counts.map do |connection, counts|
       statistic = HTTPConnectionMonitor::Statistic.new
@@ -299,6 +297,21 @@ class HTTPConnectionMonitor
     end
 
     @incoming_packets.enq nil
+  end
+
+  def trap_info
+    return unless Signal.list['INFO']
+
+    trap 'INFO' do
+      puts "%6d %6d %6.1f %6d %6.1f (count, min, avg, max, stddev)" %
+        @aggregate_statistics.to_a
+    end
+  end
+
+  def untrap_info
+    return unless Signal.list['INFO']
+
+    trap 'INFO', 'DEFAULT'
   end
 
 end
