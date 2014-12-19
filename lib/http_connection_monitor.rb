@@ -108,7 +108,7 @@ class HTTPConnectionMonitor
 
   def initialize devices: [], ports: [80], resolve_names: true,
                  run_as_directory: nil, run_as_user: nil, show_filter: false
-    @ports            = ports
+    @ports            = ports.map { |port| Socket.getservbyname port }
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
@@ -191,7 +191,7 @@ class HTTPConnectionMonitor
     src = packet.source @resolver
     dst = packet.destination @resolver
 
-    src, dst = dst, src if tcp.source_port == 80
+    src, dst = dst, src if @ports.include? tcp.source_port
 
     connection = "#{src}:#{dst}"
 
@@ -209,7 +209,8 @@ class HTTPConnectionMonitor
       return
     end
 
-    if tcp.destination_port == 80 and HTTP_METHODS_RE =~ packet.payload then
+    if @ports.include?(tcp.destination_port) and
+       HTTP_METHODS_RE =~ packet.payload then
       @in_flight_requests[connection] += 1
     end
   end
