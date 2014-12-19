@@ -253,29 +253,31 @@ class HTTPConnectionMonitor
 
     Capp.drop_privileges @run_as_user, @run_as_directory
 
-    begin
-      capture_threads = start_capture capps
+    run_capture capps
+  end
 
-      trap_info
+  def run_capture capps
+    capture_threads = start_capture capps
 
-      process_packets
+    trap_info
 
-      capture_threads.each do |thread|
-        thread.join
-      end
+    process_packets
 
-      @incoming_packets.enq nil
-    rescue Interrupt
-      stop
-
-      puts # clear ^C
-    ensure
-      @process_thread.join if @process_thread
-
-      untrap_info
-
-      puts report if $!.nil? || Interrupt === $!
+    capture_threads.each do |thread|
+      thread.join
     end
+
+    @incoming_packets.enq nil
+  rescue Interrupt
+    stop
+
+    puts # clear ^C
+  ensure
+    @process_thread.join if @process_thread
+
+    untrap_info
+
+    puts report if $!.nil? || Interrupt === $!
   end
 
   def start_capture capps
