@@ -10,17 +10,39 @@ Monitors your outbound HTTP requests for number of requests made over a
 persistent connection.  This will help you find inefficiencies in your use of
 HTTP.
 
-== Features and Problems
+== Features
 
-* FIX (list of features or problems)
+* Calculates per-destination and aggregate statistics
+* Allows offline processing of pcap dump files for easy use in production
+* Can drop root privileges after opening the packet capture devices
+* Allows capture from multiple ports and devices simultaneously
 
 == Synopsis
 
   $ sudo http_connection_monitor
 
+This will capture HTTP packets outbound on port 80 using the default
+interface.
+
+  $ sudo http_connection_monitor --port 80,3000 -i en0 -i en1
+
+This will capture HTTP packets outbound on ports 80 and 3000 on interfaces en0
+and en1.
+
+  $ http_connection_monitor --port 80,3000 --show-filter
+  ((tcp dst port 80) or (tcp src port 80 and (tcp[tcpflags] & tcp-fin != 0))) \
+  or \
+  ((tcp dst port 3000) or (tcp src port 3000 and (tcp[tcpflags] & tcp-fin != 0)))
+
+This will display the filter you need to use in tcpdump if you don't wish to
+install http_connection_monitor on your production servers.  You can then
+process the packets offline:
+
+  $ http_connection_monitor -i production_packets.pcap --port 80,3000
+
 == Requirements
 
-* tcpdump (used via capp)
+* capp gem (libpcap library)
 
 == Install
 
