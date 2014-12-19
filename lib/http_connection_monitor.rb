@@ -3,9 +3,18 @@ require 'optparse'
 require 'resolv'
 require 'thread'
 
+##
+# Monitors HTTP connections for reuse of persistent connections.
+
 class HTTPConnectionMonitor
 
+  ##
+  # The version of http_connection_monitor you are using
+
   VERSION = '1.0'
+
+  ##
+  # HTTP methods
 
   HTTP_METHODS = %w[
     CONNECT
@@ -19,11 +28,26 @@ class HTTPConnectionMonitor
     TRACE
   ]
 
-  HTTP_METHODS_RE = /\A#{Regexp.union HTTP_METHODS}/
+  HTTP_METHODS_RE = /\A#{Regexp.union HTTP_METHODS}/ # :nodoc:
+
+  ##
+  # Statistics across all completed connections.
 
   attr_reader :aggregate_statistics
+
+  ##
+  # Request counts for in-flight connections.
+
   attr_accessor :in_flight_requests
+
+  ##
+  # Per-connection statistics.
+
   attr_accessor :request_statistics
+
+  ##
+  # Processes arguments from +argv+ and returns an options Hash that ::new can
+  # use.
 
   def self.process_args argv
     options = {
@@ -100,11 +124,33 @@ class HTTPConnectionMonitor
     abort
   end
 
+  ##
+  # Runs the connection monitor using the arguments given in +argv+
+
   def self.run argv = ARGV
     options = process_args argv
 
     new(**options).run
   end
+
+  ##
+  # Creates a new HTTPConnectionMonitor.  The following arguments are
+  # accepted:
+  #
+  # +devices+ ::
+  #   The network interfaces to listen on.
+  # +ports+ ::
+  #   The ports to listen for HTTP traffic on.  May be either port numbers or
+  #   names.
+  # +resolve_names+ ::
+  #   When true host names are resolved and displayed.
+  # +run_as_directory+ ::
+  #   Directory to chroot() to when dropping privileges.
+  # +run_as_user+ ::
+  #   User to run as when dropping privileges.
+  # +show_filter+ ::
+  #   When true HTTPConnectionMonitor will print out the filter for use with
+  #   tcpdump instead of processing packets.
 
   def initialize devices: [], ports: [80], resolve_names: true,
                  run_as_directory: nil, run_as_user: nil, show_filter: false
@@ -132,7 +178,10 @@ class HTTPConnectionMonitor
     @running          = false
   end
 
-  def initialize_devices devices
+  ##
+  # Verifies the given list of +devices+.
+
+  def initialize_devices devices # :nodoc:
     @devices = devices
 
     if @devices.empty? then
@@ -156,13 +205,19 @@ class HTTPConnectionMonitor
     @devices.uniq!
   end
 
-  def capture_loop capp
+  ##
+  # Enqueues captured packets.
+
+  def capture_loop capp # :nodoc:
     capp.loop do |packet|
       enqueue_packet packet
     end
   end
 
-  def create_capp device
+  ##
+  # Sets up a capture device for processing HTTP packets.
+
+  def create_capp device # :nodoc:
     max_http_method_length = HTTP_METHODS.map { |method| method.length }.max
 
     capp = Capp.open device, 100 + max_http_method_length
@@ -172,9 +227,15 @@ class HTTPConnectionMonitor
     capp
   end
 
-  def enqueue_packet packet
+  ##
+  # Enqueues +packet+ for processing.
+
+  def enqueue_packet packet # :nodoc:
     @incoming_packets.enq packet
   end
+
+  ##
+  # The tcpdump filter string used for capturing packets.
 
   def filter
     @ports.map do |port|
@@ -185,7 +246,10 @@ class HTTPConnectionMonitor
     end.join ' or '
   end
 
-  def process_packet packet
+  ##
+  # Updates statistics for +packet+
+
+  def process_packet packet # :nodoc:
     tcp = packet.tcp_header
 
     src = packet.source @resolver
@@ -215,7 +279,10 @@ class HTTPConnectionMonitor
     end
   end
 
-  def process_packets
+  ##
+  # Creates the thread for processing packets
+
+  def process_packets # :nodoc:
     @running = true
 
     @process_thread = Thread.new do
@@ -224,6 +291,9 @@ class HTTPConnectionMonitor
       end
     end
   end
+
+  ##
+  # Returns a report on the connections and requests captured.
 
   def report
     aggregate = "%6d %6d %6.1f %6d %6.1f" % @aggregate_statistics.to_a
@@ -243,6 +313,10 @@ class HTTPConnectionMonitor
     out.join "\n"
   end
 
+  ##
+  # The main run loop.  Captures packets or shows the tcpdump filter depending
+  # on the initialization arguments.
+
   def run
     if @show_filter then
       puts filter
@@ -256,7 +330,10 @@ class HTTPConnectionMonitor
     run_capture capps
   end
 
-  def run_capture capps
+  ##
+  # The run loop for packet capturing.
+
+  def run_capture capps # :nodoc:
     capture_threads = start_capture capps
 
     trap_info
@@ -280,6 +357,10 @@ class HTTPConnectionMonitor
     puts report if $!.nil? || Interrupt === $!
   end
 
+  ##
+  # Starts capturing packets on the Capp devices in +capps+.  New devices can
+  # be added at any time.
+
   def start_capture capps
     @capps.concat capps
 
@@ -289,6 +370,9 @@ class HTTPConnectionMonitor
       end
     end
   end
+
+  ##
+  # Stops packet capture.
 
   def stop
     @running = false
@@ -300,7 +384,10 @@ class HTTPConnectionMonitor
     @incoming_packets.enq nil
   end
 
-  def trap_info
+  ##
+  # Adds a SIGINFO handler that prints out current aggregate statistics.
+
+  def trap_info # :nodoc:
     return unless Signal.list['INFO']
 
     trap 'INFO' do
@@ -312,6 +399,9 @@ class HTTPConnectionMonitor
       end
     end
   end
+
+  ##
+  # Removes the SIGINFO handler.
 
   def untrap_info
     return unless Signal.list['INFO']
