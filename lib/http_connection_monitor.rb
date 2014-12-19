@@ -172,16 +172,6 @@ class HTTPConnectionMonitor
     capp
   end
 
-  def display_connections
-    @running = true
-
-    @display_thread = Thread.new do
-      while @running and packet = @incoming_packets.deq do
-        process_packet packet
-      end
-    end
-  end
-
   def enqueue_packet packet
     @incoming_packets.enq packet
   end
@@ -225,6 +215,16 @@ class HTTPConnectionMonitor
     end
   end
 
+  def process_packets
+    @running = true
+
+    @process_thread = Thread.new do
+      while @running and packet = @incoming_packets.deq do
+        process_packet packet
+      end
+    end
+  end
+
   def report
     aggregate = "%6d %6d %6.1f %6d %6.1f" % @aggregate_statistics.to_a
 
@@ -253,23 +253,29 @@ class HTTPConnectionMonitor
 
     Capp.drop_privileges @run_as_user, @run_as_directory
 
-    start_capture capps
+    begin
+      capture_threads = start_capture capps
 
-    trap_info
+      trap_info
 
-    display_connections.join
-  rescue Interrupt
-    untrap_info
+      process_packets
 
-    stop
+      capture_threads.each do |thread|
+        thread.join
+      end
 
-    @display_thread.join
+      @incoming_packets.enq nil
+    rescue Interrupt
+      stop
 
-    puts # clear ^C
+      puts # clear ^C
+    ensure
+      @process_thread.join if @process_thread
 
-    exit
-  ensure
-    puts report
+      untrap_info
+
+      puts report if $!.nil? || Interrupt === $!
+    end
   end
 
   def start_capture capps
