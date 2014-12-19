@@ -186,7 +186,6 @@ class HTTPConnectionMonitor
   end
 
   def process_packet packet
-    ip  = packet.ipv4_header || packet.ipv6_header
     tcp = packet.tcp_header
 
     src = packet.source @resolver
