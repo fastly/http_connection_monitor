@@ -1,8 +1,8 @@
 = http_connection_monitor
 
-home :: https://github.com/drbrain/http_connection_monitor
+home :: https://github.com/fastly/http_connection_monitor
 rdoc :: http://docs.seattlerb.org/http_connection_monitor
-bugs :: https://github.com/drbrain/http_connection_monitor/issues
+bugs :: https://github.com/fastly/http_connection_monitor/issues
 
 == Description
 
