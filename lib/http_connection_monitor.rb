@@ -41,6 +41,11 @@ class HTTPConnectionMonitor
   attr_accessor :in_flight_requests
 
   ##
+  # Ports to listen for HTTP traffic
+
+  attr_reader :ports
+
+  ##
   # Per-connection statistics.
 
   attr_accessor :request_statistics
@@ -154,7 +159,7 @@ class HTTPConnectionMonitor
 
   def initialize devices: [], ports: [80], resolve_names: true,
                  run_as_directory: nil, run_as_user: nil, show_filter: false
-    @ports            = ports.map { |port| Socket.getservbyname port }
+    @ports            = ports.map { |port| Socket.getservbyname port.to_s }
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user

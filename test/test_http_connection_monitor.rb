@@ -62,12 +62,18 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     assert options[:show_filter]
   end
 
+  def test_initialize_port
+    monitor = HTTPConnectionMonitor.new ports: ['http', 8080]
+
+    assert_equal [80, 8080], monitor.ports
+  end
+
   def test_filter
     monitor = HTTPConnectionMonitor.new ports: %w[http 8080]
 
     expected = <<-FILTER.split(/\s{2,}/).join(' ').strip
-      ((tcp dst port http) or
-        (tcp src port http and (tcp[tcpflags] & tcp-fin != 0))) or
+      ((tcp dst port 80) or
+        (tcp src port 80 and (tcp[tcpflags] & tcp-fin != 0))) or
       ((tcp dst port 8080) or
         (tcp src port 8080 and (tcp[tcpflags] & tcp-fin != 0)))
     FILTER
