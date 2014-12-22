@@ -109,6 +109,20 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     assert_equal "173.10.88.49.80       1\n", out
 
     assert_equal 1, @monitor.aggregate_statistics.count
+
+    refute_empty out
+  end
+
+  def test_process_packet_quiet
+    @monitor.verbosity = 0
+
+    assert_silent do
+      capp = Capp.open(ONE_REQUEST_PCAP).loop do |packet|
+        @monitor.process_packet packet
+      end
+    end
+
+    refute_empty @monitor.request_statistics
   end
 
   def test_quiet_eh
