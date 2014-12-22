@@ -51,6 +51,11 @@ class HTTPConnectionMonitor
   attr_accessor :request_statistics
 
   ##
+  # Verbosity of output.  0 is quiet
+
+  attr_accessor :verbosity
+
+  ##
   # Processes arguments from +argv+ and returns an options Hash that ::new can
   # use.
 
@@ -61,6 +66,7 @@ class HTTPConnectionMonitor
       resolve_names:    true,
       run_as_directory: nil,
       run_as_user:      nil,
+      verbosity:        1,
     }
 
     op = OptionParser.new do |opt|
@@ -86,6 +92,13 @@ class HTTPConnectionMonitor
       opt.on('-p', '--port PORT[,PORT]', Array,
              'Listen for HTTP traffic on the given ports') do |ports|
         options[:ports] = ports
+      end
+
+      opt.separator nil
+
+      opt.on('-q', '--quiet',
+             'Do not display per-packet messages') do
+        options[:verbosity] = 0
       end
 
       opt.separator nil
@@ -158,12 +171,14 @@ class HTTPConnectionMonitor
   #   tcpdump instead of processing packets.
 
   def initialize devices: [], ports: [80], resolve_names: true,
-                 run_as_directory: nil, run_as_user: nil, show_filter: false
+                 run_as_directory: nil, run_as_user: nil, show_filter: false,
+                 verbosity: 1
     @ports            = ports.map { |port| Socket.getservbyname port.to_s }
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
     @show_filter      = show_filter
+    @verbosity        = verbosity
 
     initialize_devices devices
 
@@ -272,7 +287,7 @@ class HTTPConnectionMonitor
       @request_statistics[dst].add requests
       @aggregate_statistics.add requests
 
-      puts "%-21s %d" % [dst, requests]
+      puts "%-21s %d" % [dst, requests] unless quiet?
 
       return
     end
@@ -294,6 +309,13 @@ class HTTPConnectionMonitor
         process_packet packet
       end
     end
+  end
+
+  ##
+  # Is the monitor in quiet mode?
+
+  def quiet?
+    @verbosity.zero?
   end
 
   ##

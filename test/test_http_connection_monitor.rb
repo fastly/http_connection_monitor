@@ -20,6 +20,7 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     assert_nil         options[:run_as_directory]
     assert_nil         options[:run_as_user]
     refute             options[:show_filter]
+    assert_equal 1,    options[:verbosity]
   end
 
   def test_class_process_args_interface
@@ -42,6 +43,12 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     options = HTTPConnectionMonitor.process_args %w[-p 8080,http]
 
     assert_equal %w[8080 http], options[:ports]
+  end
+
+  def test_class_process_args_quiet
+    options = HTTPConnectionMonitor.process_args %w[-q]
+
+    assert_equal 0, options[:verbosity]
   end
 
   def test_class_process_args_run_as_directory
@@ -102,6 +109,14 @@ class TestHttpConnectionMonitor < MiniTest::Unit::TestCase
     assert_equal "173.10.88.49.80       1\n", out
 
     assert_equal 1, @monitor.aggregate_statistics.count
+  end
+
+  def test_quiet_eh
+    refute @monitor.quiet?
+
+    @monitor.verbosity = 0
+
+    assert @monitor.quiet?
   end
 
   def test_report
