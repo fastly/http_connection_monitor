@@ -162,7 +162,6 @@ class HTTPConnectionMonitor
 
     initialize_devices devices
 
-
     @aggregate_statistics = HTTPConnectionMonitor::Statistic.new
 
     # in-flight request count per connection
