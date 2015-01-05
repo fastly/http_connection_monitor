@@ -174,6 +174,7 @@ class HTTPConnectionMonitor
                  run_as_directory: nil, run_as_user: nil, show_filter: false,
                  verbosity: 1
     @ports            = ports.map { |port| Socket.getservbyname port.to_s }
+    @resolver         = nil
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
