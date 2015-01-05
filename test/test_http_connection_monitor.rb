@@ -95,7 +95,7 @@ class TestHttpConnectionMonitor < Minitest::Test
       end
     end
 
-    assert_empty @monitor.in_flight_requests
+    assert_empty @monitor.in_flight_request_counts
 
     stat = HTTPConnectionMonitor::Statistic.new
     stat.add 1

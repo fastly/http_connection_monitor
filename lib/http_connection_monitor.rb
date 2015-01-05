@@ -36,9 +36,9 @@ class HTTPConnectionMonitor
   attr_reader :aggregate_statistics
 
   ##
-  # Request counts for in-flight connections.
+  # Number of requests seen for each in-flight connection.
 
-  attr_accessor :in_flight_requests
+  attr_accessor :in_flight_request_counts
 
   ##
   # Ports to listen for HTTP traffic
@@ -186,10 +186,10 @@ class HTTPConnectionMonitor
     @aggregate_statistics = HTTPConnectionMonitor::Statistic.new
 
     # in-flight request count per connection
-    @in_flight_requests   = Hash.new 0
+    @in_flight_request_counts = Hash.new 0
 
     # history of request count per destination
-    @request_statistics   = Hash.new do |h, destination|
+    @request_statistics = Hash.new do |h, destination|
       h[destination] = HTTPConnectionMonitor::Statistic.new
     end
 
@@ -280,8 +280,8 @@ class HTTPConnectionMonitor
     connection = "#{src}:#{dst}"
 
     if tcp.fin? then
-      requests = @in_flight_requests[connection]
-      @in_flight_requests.delete connection
+      requests = @in_flight_request_counts[connection]
+      @in_flight_request_counts.delete connection
 
       return if requests.zero? # ignore FIN from other end
 
@@ -295,7 +295,7 @@ class HTTPConnectionMonitor
 
     if @ports.include?(tcp.destination_port) and
        HTTP_METHODS_RE =~ packet.payload then
-      @in_flight_requests[connection] += 1
+      @in_flight_request_counts[connection] += 1
     end
   end
 
