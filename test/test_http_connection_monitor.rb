@@ -90,7 +90,7 @@ class TestHttpConnectionMonitor < Minitest::Test
 
   def test_process_packet
     out, = capture_io do
-      capp = Capp.open(ONE_REQUEST_PCAP).loop do |packet|
+      Capp.open(ONE_REQUEST_PCAP).loop do |packet|
         @monitor.process_packet packet
       end
     end
@@ -117,7 +117,7 @@ class TestHttpConnectionMonitor < Minitest::Test
     @monitor.verbosity = 0
 
     assert_silent do
-      capp = Capp.open(ONE_REQUEST_PCAP).loop do |packet|
+      Capp.open(ONE_REQUEST_PCAP).loop do |packet|
         @monitor.process_packet packet
       end
     end
