@@ -66,6 +66,7 @@ class HTTPConnectionMonitor
       resolve_names:    true,
       run_as_directory: nil,
       run_as_user:      nil,
+      show_reason:      false,
       verbosity:        1,
     }
 
@@ -108,6 +109,16 @@ class HTTPConnectionMonitor
              'allows separate capture of packets via',
              'tcpdump which can be processed separately') do |show_filter|
         options[:show_filter] = show_filter
+      end
+
+      opt.separator nil
+
+      opt.on(     '--show-reason',
+             'Show the reason for connection close',
+             'by analyzing the entire packet stream.',
+             '(All bytes from a connection are',
+             'captured when enabled).') do |show_reason|
+        options[:show_reason] = show_reason
       end
 
       opt.separator nil

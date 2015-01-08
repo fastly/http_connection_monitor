@@ -14,13 +14,14 @@ class TestHttpConnectionMonitor < Minitest::Test
   def test_class_process_args
     options = HTTPConnectionMonitor.process_args []
 
-    assert_empty       options[:devices]
-    assert_equal [80], options[:ports]
-    assert             options[:resolve_names]
-    assert_nil         options[:run_as_directory]
-    assert_nil         options[:run_as_user]
-    refute             options[:show_filter]
-    assert_equal 1,    options[:verbosity]
+    assert_empty        options[:devices]
+    assert_equal [80],  options[:ports]
+    assert              options[:resolve_names]
+    assert_nil          options[:run_as_directory]
+    assert_nil          options[:run_as_user]
+    refute              options[:show_filter]
+    assert_equal false, options[:show_reason]
+    assert_equal 1,     options[:verbosity]
   end
 
   def test_class_process_args_interface
@@ -67,6 +68,12 @@ class TestHttpConnectionMonitor < Minitest::Test
     options = HTTPConnectionMonitor.process_args %w[--show-filter]
 
     assert options[:show_filter]
+  end
+
+  def test_class_process_args_show_reason
+    options = HTTPConnectionMonitor.process_args %w[--show-reason]
+
+    assert options[:show_reason]
   end
 
   def test_initialize_port
