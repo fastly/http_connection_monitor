@@ -1,6 +1,9 @@
+##
+# Base class for processing HTTP requests and responses.
+
 class HTTPConnectionMonitor::Message
 
-  def initialize
+  def initialize # :nodoc:
     @read, @write = IO.pipe
   end
 
