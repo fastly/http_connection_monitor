@@ -439,5 +439,6 @@ class HTTPConnectionMonitor
 end
 
 require 'http_connection_monitor/request'
+require 'http_connection_monitor/response'
 require 'http_connection_monitor/statistic'
 
