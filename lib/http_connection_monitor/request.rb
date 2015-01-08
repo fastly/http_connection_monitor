@@ -1,12 +1,20 @@
+require 'http_connection_monitor/message'
+
 require 'webrick'
 require 'logger'
 
-class HTTPConnectionMonitor::Request
+##
+# A request in a stream of HTTP packets.
+#
+# This only parses the header for the request and ignores the body.
 
-  NULL_LOGGER = Logger.new IO::NULL
+class HTTPConnectionMonitor::Request < HTTPConnectionMonitor::Message
 
-  def initialize
-    @read, @write = IO.pipe
+  NULL_LOGGER = Logger.new IO::NULL # :nodoc:
+
+  def initialize # :nodoc:
+    super
+
     @request =
       WEBrick::HTTPRequest.new InputBufferSize: 2048, Logger: NULL_LOGGER
 
@@ -15,21 +23,11 @@ class HTTPConnectionMonitor::Request
     end
   end
 
-  def << input
-    @write << input
-    @parser.run unless @parser.status == false
-  end
-
-  def [] header
-    @request[header]
-  end
+  ##
+  # Did the request include an explicit close?
 
   def explicit_close?
     /close/i =~ @request['connection']
-  end
-
-  def in_process?
-    %w[run sleep].include? @parser.status
   end
 
 end

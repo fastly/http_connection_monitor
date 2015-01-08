@@ -5,10 +5,12 @@ README.rdoc
 Rakefile
 bin/http_connection_monitor
 lib/http_connection_monitor.rb
+lib/http_connection_monitor/message.rb
 lib/http_connection_monitor/request.rb
 lib/http_connection_monitor/response.rb
 lib/http_connection_monitor/statistic.rb
 test/one_request.pcap
 test/test_http_connection_monitor.rb
+test/test_http_connection_monitor_message.rb
 test/test_http_connection_monitor_request.rb
 test/test_http_connection_monitor_response.rb

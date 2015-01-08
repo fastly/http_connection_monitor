@@ -20,14 +20,6 @@ Host: example\r
     @request = HTTPConnectionMonitor::Request.new
   end
 
-  def test_append
-    @request << CLOSE_REQUEST
-
-    Thread.pass while @request.in_process?
-
-    refute @request.in_process?
-  end
-
   def test_explicit_close_eh_closed
     @request << CLOSE_REQUEST
 
@@ -42,24 +34,6 @@ Host: example\r
     Thread.pass while @request.in_process?
 
     refute @request.explicit_close?
-  end
-
-  def test_in_process_eh
-    lines = PERSISTENT_REQUEST.lines
-
-    assert @request.in_process?, 'no lines added'
-
-    @request << lines.shift
-
-    assert @request.in_process?, 'request incomplete, lines pending'
-
-    lines.each do |line|
-      @request << line
-    end
-
-    Thread.pass while @request.in_process?
-
-    refute @request.in_process?, 'complete request added'
   end
 
 end
