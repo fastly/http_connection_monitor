@@ -5,6 +5,7 @@ require 'hoe'
 
 Hoe.plugin :minitest
 Hoe.plugin :git
+Hoe.plugin :travis
 
 Hoe.spec 'http_connection_monitor' do
   developer 'Fastly, Inc.', 'ehodel@fastly.com'
