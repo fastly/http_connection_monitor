@@ -184,13 +184,15 @@ class HTTPConnectionMonitor
   #   creating a packet capture instead of processing packets.
 
   def initialize devices: [], ports: [80], resolve_names: true,
-                 run_as_directory: nil, run_as_user: nil, show_tcpdump: false,
+                 run_as_directory: nil, run_as_user: nil,
+                 show_reason: false, show_tcpdump: false,
                  verbosity: 1
     @ports            = ports.map { |port| Socket.getservbyname port.to_s }
     @resolver         = nil
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
+    @show_reason      = show_reason
     @show_tcpdump     = show_tcpdump
     @verbosity        = verbosity
 
