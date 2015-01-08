@@ -36,6 +36,11 @@ class HTTPConnectionMonitor
   attr_reader :aggregate_statistics
 
   ##
+  # tcpdump devices where HTTP traffic will be captured
+
+  attr_reader :devices
+
+  ##
   # Number of requests seen for each in-flight connection.
 
   attr_accessor :in_flight_request_counts
@@ -370,7 +375,7 @@ class HTTPConnectionMonitor
 
   def run
     if @show_tcpdump then
-      puts filter
+      puts tcpdump_command
       exit
     end
 
@@ -433,6 +438,19 @@ class HTTPConnectionMonitor
     end
 
     @incoming_packets.enq nil
+  end
+
+  ##
+  # A tcpdump command you can run to save a dump for offline processing
+
+  def tcpdump_command
+    %W[
+      tcpdump
+        -i #{@devices.first}
+        -s #{capture_size}
+        -w http.pcap
+        '#{filter}'
+    ].join ' '
   end
 
   ##

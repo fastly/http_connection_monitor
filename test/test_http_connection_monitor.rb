@@ -175,5 +175,20 @@ Per-connection: (connections, min, avg, max, stddev)
     assert_equal expected, out
   end
 
+  def test_tcpdump_command
+    device       = @monitor.devices.first
+    capture_size = @monitor.capture_size
+
+    expected = %W[
+      tcpdump
+        -i #{device}
+        -s #{capture_size}
+        -w http.pcap
+        '#{@monitor.filter}'
+    ].join ' '
+
+    assert_equal expected, @monitor.tcpdump_command
+  end
+
 end
 
