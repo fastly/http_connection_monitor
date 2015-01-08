@@ -67,6 +67,7 @@ class HTTPConnectionMonitor
       run_as_directory: nil,
       run_as_user:      nil,
       show_reason:      false,
+      show_tcpdump:     false,
       verbosity:        1,
     }
 
@@ -104,11 +105,12 @@ class HTTPConnectionMonitor
 
       opt.separator nil
 
-      opt.on(      '--show-filter',
-             'Only show the tcpdump filter used.  This',
-             'allows separate capture of packets via',
-             'tcpdump which can be processed separately') do |show_filter|
-        options[:show_filter] = show_filter
+      opt.on(      '--show-tcpdump',
+             'Only show the tcpdump arguments to use.',
+             'This allows separate capture of packets',
+             'via tcpdump which can be processed',
+             'separately.') do |show_tcpdump|
+        options[:show_tcpdump] = show_tcpdump
       end
 
       opt.separator nil
@@ -177,19 +179,19 @@ class HTTPConnectionMonitor
   #   Directory to chroot() to when dropping privileges.
   # +run_as_user+ ::
   #   User to run as when dropping privileges.
-  # +show_filter+ ::
-  #   When true HTTPConnectionMonitor will print out the filter for use with
-  #   tcpdump instead of processing packets.
+  # +show_tcpdump+ ::
+  #   When true HTTPConnectionMonitor will print out the tcpdump arguments for
+  #   creating a packet capture instead of processing packets.
 
   def initialize devices: [], ports: [80], resolve_names: true,
-                 run_as_directory: nil, run_as_user: nil, show_filter: false,
+                 run_as_directory: nil, run_as_user: nil, show_tcpdump: false,
                  verbosity: 1
     @ports            = ports.map { |port| Socket.getservbyname port.to_s }
     @resolver         = nil
     @resolver         = Resolv if resolve_names
     @run_as_directory = run_as_directory
     @run_as_user      = run_as_user
-    @show_filter      = show_filter
+    @show_tcpdump     = show_tcpdump
     @verbosity        = verbosity
 
     initialize_devices devices
@@ -356,7 +358,7 @@ class HTTPConnectionMonitor
   # on the initialization arguments.
 
   def run
-    if @show_filter then
+    if @show_tcpdump then
       puts filter
       exit
     end

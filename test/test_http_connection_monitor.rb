@@ -19,8 +19,8 @@ class TestHttpConnectionMonitor < Minitest::Test
     assert              options[:resolve_names]
     assert_nil          options[:run_as_directory]
     assert_nil          options[:run_as_user]
-    refute              options[:show_filter]
     assert_equal false, options[:show_reason]
+    assert_equal false, options[:show_tcpdump]
     assert_equal 1,     options[:verbosity]
   end
 
@@ -64,16 +64,16 @@ class TestHttpConnectionMonitor < Minitest::Test
     assert_equal 'nobody', options[:run_as_user]
   end
 
-  def test_class_process_args_show_filter
-    options = HTTPConnectionMonitor.process_args %w[--show-filter]
-
-    assert options[:show_filter]
-  end
-
   def test_class_process_args_show_reason
     options = HTTPConnectionMonitor.process_args %w[--show-reason]
 
     assert options[:show_reason]
+  end
+
+  def test_class_process_args_show_tcpdump
+    options = HTTPConnectionMonitor.process_args %w[--show-tcpdump]
+
+    assert options[:show_tcpdump]
   end
 
   def test_initialize_port
