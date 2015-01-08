@@ -82,6 +82,16 @@ class TestHttpConnectionMonitor < Minitest::Test
     assert_equal [80, 8080], monitor.ports
   end
 
+  def test_capture_size
+    assert_equal 107, @monitor.capture_size
+  end
+
+  def test_capture_size_show_reason
+    @monitor = HTTPConnectionMonitor.new show_reason: true
+
+    assert_equal 0, @monitor.capture_size
+  end
+
   def test_filter
     monitor = HTTPConnectionMonitor.new ports: %w[http 8080]
 

@@ -250,12 +250,21 @@ class HTTPConnectionMonitor
   end
 
   ##
+  # The size of the packet captured from the device
+
+  def capture_size # :nodoc:
+    return 0 if @show_reason
+
+    max_http_method_length = HTTP_METHODS.map { |method| method.length }.max
+
+    100 + max_http_method_length
+  end
+
+  ##
   # Sets up a capture device for processing HTTP packets.
 
   def create_capp device # :nodoc:
-    max_http_method_length = HTTP_METHODS.map { |method| method.length }.max
-
-    capp = Capp.open device, 100 + max_http_method_length
+    capp = Capp.open device, capture_size
 
     capp.filter = filter
 
