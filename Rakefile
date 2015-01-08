@@ -18,4 +18,12 @@ Hoe.spec 'http_connection_monitor' do
   self.readme_file = 'README.rdoc'
 end
 
+namespace :travis do
+  task :install_libpcap do
+    sh 'sudo apt-get install libpcap-dev'
+  end
+
+  task before: %w[install_libpcap]
+end
+
 # vim: syntax=ruby
