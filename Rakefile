@@ -23,8 +23,8 @@ namespace :travis do
   task :install_libpcap do
     sh 'sudo apt-get install libpcap-dev'
   end
-
-  task before: %w[install_libpcap]
 end
+
+task check_extra_deps: %w[travis:install_libpcap]
 
 # vim: syntax=ruby
