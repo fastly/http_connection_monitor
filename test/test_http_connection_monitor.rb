@@ -8,7 +8,7 @@ class TestHttpConnectionMonitor < Minitest::Test
   ONE_REQUEST_PCAP = File.join test, 'one_request.pcap'
 
   def setup
-    @default_devices = [Capp.default_device_name]
+    @default_devices = [ONE_REQUEST_PCAP]
 
     @monitor =
       HTTPConnectionMonitor.new devices: @default_devices, resolve_names: false
