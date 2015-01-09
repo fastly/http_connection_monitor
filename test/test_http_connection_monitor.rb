@@ -8,7 +8,10 @@ class TestHttpConnectionMonitor < Minitest::Test
   ONE_REQUEST_PCAP = File.join test, 'one_request.pcap'
 
   def setup
-    @monitor = HTTPConnectionMonitor.new resolve_names: false
+    @default_devices = [Capp.default_device_name]
+
+    @monitor =
+      HTTPConnectionMonitor.new devices: @default_devices, resolve_names: false
   end
 
   def test_class_process_args
@@ -77,7 +80,8 @@ class TestHttpConnectionMonitor < Minitest::Test
   end
 
   def test_initialize_port
-    monitor = HTTPConnectionMonitor.new ports: ['http', 8080]
+    monitor =
+      HTTPConnectionMonitor.new devices: @default_devices, ports: ['http', 8080]
 
     assert_equal [80, 8080], monitor.ports
   end
@@ -87,13 +91,15 @@ class TestHttpConnectionMonitor < Minitest::Test
   end
 
   def test_capture_size_show_reason
-    @monitor = HTTPConnectionMonitor.new show_reason: true
+    @monitor =
+      HTTPConnectionMonitor.new devices: @default_devices, show_reason: true
 
     assert_equal 0, @monitor.capture_size
   end
 
   def test_filter
-    monitor = HTTPConnectionMonitor.new ports: %w[http 8080]
+    monitor =
+      HTTPConnectionMonitor.new devices: @default_devices, ports: %w[http 8080]
 
     expected = <<-FILTER.split(/\s{2,}/).join(' ').strip
       ((tcp dst port 80) or
