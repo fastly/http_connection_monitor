@@ -14,7 +14,8 @@ Hoe.spec 'http_connection_monitor' do
 
   license 'MIT'
 
-  dependency 'capp', '~> 1.0'
+  dependency 'capp',     '~> 1.0'
+  dependency 'minitest', '~> 5.4', :developer
 
   self.readme_file = 'README.rdoc'
 end
