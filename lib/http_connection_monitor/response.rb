@@ -19,10 +19,24 @@ class HTTPConnectionMonitor::Response < HTTPConnectionMonitor::Message
   end
 
   ##
-  # Did the request include an explicit close?
+  # Was the connection terminated by this request?
 
-  def explicit_close?
-    /close/i =~ @response['connection']
+  def closed?
+    return true if /close/i =~ @response['connection']
+
+    return false unless @response.class.body_permitted?
+
+    if transfer_encoding = @response['transfer-encoding'] then
+      return false if /chunked\z/i =~ transfer_encoding
+      return true
+    end
+
+    if content_lengths = @response.to_hash['content-length'] then
+      return true if content_lengths.length > 1
+      return /\A\d+\z/ !~ content_lengths.first
+    end
+
+    true
   end
 
 end
